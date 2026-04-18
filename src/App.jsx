@@ -162,6 +162,24 @@ const getMetricStatus = (metric, rawValue) => {
     }
 };
 
+const scoreBandTone = {
+    high: 'danger',
+    medium: 'warning',
+    low: 'success'
+};
+
+const scoreBandLabel = {
+    high: '高',
+    medium: '中',
+    low: '低'
+};
+
+const formatForecastTime = (timestamp) => {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return '--';
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
+
 const buildLocalPythonInsights = (data, metrics) => {
     const recent = data.slice(-96);
     const windows = [
@@ -233,6 +251,31 @@ const buildLocalPythonInsights = (data, metrics) => {
             samples: data.length,
             estimatedDays: Math.max(1, Math.round(data.length / 96))
         },
+        riskScores: {
+            variability: { score: Number(metrics.cv) > 36 ? 78 : 42, band: Number(metrics.cv) > 36 ? 'high' : 'medium' },
+            hyperExposure: { score: Number(metrics.tar) > 25 ? 74 : 38, band: Number(metrics.tar) > 25 ? 'high' : 'low' },
+            hypoExposure: { score: Number(metrics.tbr) >= 4 ? 58 : 24, band: Number(metrics.tbr) >= 4 ? 'medium' : 'low' },
+            circadianDrift: { score: 46, band: 'medium' },
+            stability: { score: Number(metrics.tir) >= 70 ? 72 : 41, band: Number(metrics.tir) >= 70 ? 'high' : 'medium' }
+        },
+        forecast: {
+            trajectory: Number(metrics.tar) > 25 ? 'rising-risk' : 'stable',
+            confidence: 'low',
+            summary: Number(metrics.tar) > 25 ? '浏览器回退结果显示未来 2 小时仍可能维持偏高趋势。' : '浏览器回退结果显示未来 2 小时整体相对稳定。',
+            points: recent.slice(-8).map((item, index, array) => ({
+                timestamp: item.timestamp,
+                glucose: Number((item.glucose + (index >= array.length - 2 ? 0.2 : 0)).toFixed(1))
+            }))
+        },
+        actionPlan: {
+            priorityActions: anomalies.slice(0, 2).map((item) => ({
+                title: item.title,
+                reason: item.evidence,
+                action: item.nextStep
+            })),
+            monitoringFocus: ['先看异常卡片，再看时段画像，最后解释短时趋势。', '优先把高峰和夜间模式串成一个闭环故事。'],
+            productOpportunities: ['把趋势预测做成主动提醒。', '把日级总结沉淀成协作记录。', '把风险评分接入工作流面板。']
+        },
         windowProfiles,
         mealSignals: [
             {
@@ -260,7 +303,13 @@ const buildLocalPythonInsights = (data, metrics) => {
             '最值得优先解释的风险是什么？',
             '这个作品最能体现 AI 能力的点是什么？',
             '这份结果应该如何接进协作工作流？'
-        ]
+        ],
+        workflowHints: {
+            positioning: '围绕关键波动模式构建从识别到执行的智能流程。',
+            system_roles: [],
+            delivery_targets: [],
+            automationIdeas: ['把趋势预测和异常卡片一起推送到协作入口。']
+        }
     };
 };
 
@@ -1080,6 +1129,94 @@ function App() {
                                                 <p className="mt-3 text-sm leading-6 opacity-80">{signal.insight}</p>
                                             </div>
                                         ))}
+                                    </div>
+
+                                    <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+                                        <div className="rounded-[28px] border border-slate-200 bg-white/85 p-6 shadow-sm">
+                                            <div className="mb-4 flex items-center gap-2">
+                                                <Activity className="h-4 w-4 text-sky-600" />
+                                                <h3 className="text-lg font-black text-slate-900">Python 风险评分</h3>
+                                            </div>
+                                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                                {Object.entries(pythonInsights.riskScores || {}).map(([key, value]) => (
+                                                    <div key={key} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                                                        <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">{key}</div>
+                                                        <div className="mt-3 flex items-end gap-2">
+                                                            <span className="text-3xl font-black text-slate-900">{value.score ?? '--'}</span>
+                                                            <span className="pb-1 text-xs font-semibold text-slate-500">/ 100</span>
+                                                        </div>
+                                                        <div className="mt-3">
+                                                            <Pill tone={scoreBandTone[value.band] || 'neutral'}>
+                                                                风险 {scoreBandLabel[value.band] || value.band || '未知'}
+                                                            </Pill>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-[28px] border border-slate-200 bg-white/85 p-6 shadow-sm">
+                                            <div className="mb-4 flex items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-black text-slate-900">2 小时趋势预测</h3>
+                                                    <p className="mt-1 text-sm text-slate-500">{pythonInsights.forecast?.summary}</p>
+                                                </div>
+                                                <Pill tone={pythonInsights.forecast?.trajectory === 'stable' ? 'success' : 'warning'}>
+                                                    {pythonInsights.forecast?.confidence || 'low'}
+                                                </Pill>
+                                            </div>
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                {(pythonInsights.forecast?.points || []).map((point) => (
+                                                    <div key={point.timestamp} className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+                                                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{formatForecastTime(point.timestamp)}</div>
+                                                        <div className="mt-2 text-2xl font-black text-slate-900">{point.glucose}</div>
+                                                        <div className="text-xs text-slate-500">mmol/L</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+                                        <div className="rounded-[28px] border border-slate-200 bg-white/85 p-6 shadow-sm">
+                                            <div className="mb-4 flex items-center gap-2">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                                <h3 className="text-lg font-black text-slate-900">行动建议</h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {(pythonInsights.actionPlan?.priorityActions || []).map((item) => (
+                                                    <div key={item.title} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                                                        <div className="text-sm font-black text-slate-900">{item.title}</div>
+                                                        <p className="mt-2 text-sm leading-6 text-slate-600">{item.reason}</p>
+                                                        <div className="mt-3 rounded-[16px] bg-white px-3 py-2 text-xs font-medium text-slate-600">{item.action}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                {(pythonInsights.actionPlan?.productOpportunities || []).map((item) => (
+                                                    <span key={item} className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">{item}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-[28px] border border-slate-200 bg-white/85 p-6 shadow-sm">
+                                            <div className="mb-4 flex items-center gap-2">
+                                                <FileText className="h-4 w-4 text-violet-600" />
+                                                <h3 className="text-lg font-black text-slate-900">近 7 天日级总结</h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {(pythonInsights.dailyPatterns || []).slice(-7).map((day) => (
+                                                    <div key={day.date} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+                                                        <div>
+                                                            <div className="text-sm font-bold text-slate-900">{day.date}</div>
+                                                            <div className="text-xs text-slate-500">{day.label} / 范围宽度 {day.rangeWidth}</div>
+                                                        </div>
+                                                        <div className="text-sm font-semibold text-slate-700">TIR {day.tir}%</div>
+                                                        <div className="text-sm font-semibold text-slate-700">均值 {day.avg}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}

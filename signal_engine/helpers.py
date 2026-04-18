@@ -67,3 +67,7 @@ def detect_excursions(values, predicate):
         elif not hit:
             active = False
     return excursions
+
+
+def clamp(value, lower, upper):
+    return max(lower, min(upper, value))

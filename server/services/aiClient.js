@@ -12,7 +12,10 @@ const buildPrompt = ({ metrics, recentData, locale, pythonInsights }) => {
         `Python signal summary: ${JSON.stringify({
             summary: pythonInsights?.summary,
             anomalyCards: pythonInsights?.anomalyCards,
-            mealSignals: pythonInsights?.mealSignals
+            mealSignals: pythonInsights?.mealSignals,
+            riskScores: pythonInsights?.riskScores,
+            forecast: pythonInsights?.forecast,
+            actionPlan: pythonInsights?.actionPlan
         })}`
     ].join('\n');
 };
@@ -29,6 +32,9 @@ const buildCopilotContextMessage = ({ metrics, analysis, pythonInsights, locale 
             summary: pythonInsights?.summary,
             anomalyCards: pythonInsights?.anomalyCards,
             mealSignals: pythonInsights?.mealSignals,
+            riskScores: pythonInsights?.riskScores,
+            forecast: pythonInsights?.forecast,
+            actionPlan: pythonInsights?.actionPlan,
             suggestedQuestions: pythonInsights?.suggestedQuestions
         })}`
     ].join('\n');

@@ -7,8 +7,11 @@ if __package__ in (None, ""):
     sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from signal_engine.anomalies import build_anomalies
+from signal_engine.forecast import build_forecast
 from signal_engine.helpers import parse_timestamp, safe_mean, to_float
 from signal_engine.profiles import build_daily_patterns, build_meal_signals, build_window_profiles
+from signal_engine.recommendations import build_action_plan
+from signal_engine.scoring import build_risk_scores
 from signal_engine.storyline import build_suggested_questions, choose_storyline
 from signal_engine.workflow_blueprint import build_workflow_hints
 
@@ -52,12 +55,18 @@ def main():
     daily_patterns = build_daily_patterns(points)
     anomalies = build_anomalies(points, metrics, window_profiles, meal_signals)
     summary = build_summary(points, metrics, anomalies)
-    workflow_hints = build_workflow_hints(summary, anomalies)
+    risk_scores = build_risk_scores(metrics, window_profiles, meal_signals, anomalies)
+    forecast = build_forecast(points)
+    action_plan = build_action_plan(summary, anomalies, meal_signals, daily_patterns, forecast)
+    workflow_hints = build_workflow_hints(summary, anomalies, action_plan, forecast)
 
     output = {
         "engine": "cgm-signal-engine",
         "generated": True,
         "summary": summary,
+        "riskScores": risk_scores,
+        "forecast": forecast,
+        "actionPlan": action_plan,
         "windowProfiles": window_profiles,
         "mealSignals": meal_signals,
         "dailyPatterns": daily_patterns,

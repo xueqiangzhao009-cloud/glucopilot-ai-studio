@@ -22,6 +22,18 @@ const buildFallbackInsights = ({ data = [], metrics = {} }, errorMessage = '') =
     windowProfiles: [],
     mealSignals: [],
     dailyPatterns: [],
+    riskScores: {},
+    forecast: {
+        trajectory: 'insufficient-data',
+        confidence: 'low',
+        summary: 'Signal engine forecast is unavailable.',
+        points: []
+    },
+    actionPlan: {
+        priorityActions: [],
+        monitoringFocus: [],
+        productOpportunities: []
+    },
     anomalyCards: [
         {
             id: 'signal-engine-runtime',
@@ -34,7 +46,13 @@ const buildFallbackInsights = ({ data = [], metrics = {} }, errorMessage = '') =
     suggestedQuestions: [
         '这组数据最值得优先解释的风险是什么？',
         '如果把信号引擎链路打开，还能得到哪些结构化洞察？'
-    ]
+    ],
+    workflowHints: {
+        positioning: 'Signal engine workflow hints are unavailable.',
+        system_roles: [],
+        delivery_targets: [],
+        automationIdeas: []
+    }
 });
 
 const runSignalEngine = (payload) => new Promise((resolve, reject) => {

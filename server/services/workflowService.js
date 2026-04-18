@@ -5,11 +5,14 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
     const isChinese = locale.toLowerCase().startsWith('zh');
     const dominantPattern = pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || (isChinese ? '关键时段优化' : 'targeted optimization');
     const highRisk = Number(metrics?.cv) > 36 || Number(metrics?.tar) > 25;
+    const workflowHints = pythonInsights?.workflowHints || {};
+    const actionPlan = pythonInsights?.actionPlan || {};
+    const priorityAction = actionPlan.priorityActions?.[0];
 
     return {
         title: isChinese ? 'GlucoPilot Agent Workflow' : 'GlucoPilot Agent Workflow',
         summary: isChinese
-            ? `围绕“${dominantPattern}”构建一条从数据洞察到协作平台执行的 Agent 闭环。`
+            ? workflowHints.positioning || `围绕“${dominantPattern}”构建一条从数据洞察到协作平台执行的 Agent 闭环。`
             : `Build an end-to-end agent loop around "${dominantPattern}".`,
         positioning: isChinese
             ? '把健康数据分析从一次性报告升级成可持续协作的办公场景智能体。'
@@ -41,7 +44,7 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
                 title: isChinese ? '协作平台执行动作' : 'Collaboration Workflow',
                 owner: isChinese ? 'Workflow Agent' : 'Workflow Agent',
                 goal: isChinese ? '把风险信号推送到消息 / 表格 / 待办 / 文档' : 'Push signals into chat, tables, todo, and docs',
-                automation: isChinese ? '形成提醒、记录、复盘和协作闭环' : 'Create an alert, logging, review, and collaboration loop'
+                automation: priorityAction?.action || (isChinese ? '形成提醒、记录、复盘和协作闭环' : 'Create an alert, logging, review, and collaboration loop')
             }
         ],
         feishu_surfaces: [
@@ -71,6 +74,7 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
                 '先上传一段 CGM 数据，让系统在 10 秒内跑完指标、Python 信号和 AI 分析。',
                 '切到 Copilot 面板，连续追问两到三轮，展示真实多轮对话能力。',
                 '切到 Agent Workflow 页面，说明这些结果如何映射到消息、表格和文档系统。',
+                ...(workflowHints.automationIdeas || []).slice(0, 1),
                 highRisk ? '重点强调系统如何把高风险信号转成主动提醒与复盘任务。' : '重点强调系统如何把长期稳定跟踪做成可持续的工作流。'
             ]
             : [
