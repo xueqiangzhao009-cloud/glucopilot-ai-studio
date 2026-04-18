@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { config } from './config.js';
 import { calculateMetrics, normalizeCGMData, parseCSV } from './services/cgmMetrics.js';
-import { analyzePathology, answerCopilotQuestion } from './services/aiClient.js';
+import { analyzePathology, answerCopilotQuestion, generateAIBriefing } from './services/aiClient.js';
 import { generateVideo } from './services/videoService.js';
 import { generateSignalEngineInsights } from './services/signalEngineService.js';
 import { generateAgentWorkflow } from './services/workflowService.js';
@@ -135,10 +135,47 @@ export const handleRequest = async (req, res) => {
                 pythonInsights: signalInsights,
                 locale: body.locale || 'en',
                 requireAI: Boolean(body.requireAI),
-                history: Array.isArray(body.history) ? body.history : []
+                history: Array.isArray(body.history) ? body.history : [],
+                mode: body.mode || 'general'
             });
 
             sendJson(res, 200, { answer, ...buildInsightsPayload(signalInsights) });
+            return;
+        }
+
+        if (req.method === 'POST' && url.pathname === '/api/ai/brief') {
+            const body = await readJsonBody(req, config.bodyLimitBytes);
+            let metrics = body.metrics;
+            let analysis = body.analysis || null;
+            let signalInsights = body.signalInsights || body.pythonInsights || null;
+
+            if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
+                const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
+                metrics = metricsResponse.metrics;
+                signalInsights = await generateSignalEngineInsights({
+                    data: metricsResponse.data,
+                    metrics
+                });
+                analysis = await analyzePathology({
+                    metrics,
+                    recentData: metricsResponse.data.slice(-96),
+                    locale: body.locale || 'en',
+                    requireAI: Boolean(body.requireAI),
+                    pythonInsights: signalInsights
+                });
+            }
+
+            if (!metrics) throw new HttpError(400, 'metrics or CGM data is required');
+
+            const brief = await generateAIBriefing({
+                metrics,
+                analysis,
+                pythonInsights: signalInsights,
+                locale: body.locale || 'en',
+                requireAI: Boolean(body.requireAI)
+            });
+
+            sendJson(res, 200, { brief, analysis, ...buildInsightsPayload(signalInsights) });
             return;
         }
 

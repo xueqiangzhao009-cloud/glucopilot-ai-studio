@@ -398,6 +398,32 @@ const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
     source: 'rules'
 });
 
+const buildLocalBrief = ({ metrics, analysis, pythonInsights }) => ({
+    title: 'AI Briefing Snapshot',
+    summary: `围绕“${pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || '关键时段优化'}”组织一套更适合演示的 AI 讲解结构。`,
+    talking_points: [
+        `核心指标为 TIR ${metrics?.tir}%、TAR ${metrics?.tar}%、CV ${metrics?.cv}%。`,
+        `Signal Engine 已产出 ${pythonInsights?.anomalyCards?.length || 0} 张异常卡片和趋势预测。`,
+        'Copilot、Briefing 和 Workflow 可以形成连续的 AI 讲解链路。'
+    ],
+    risk_callouts: [
+        pythonInsights?.anomalyCards?.[0]?.title || '当前没有突出的异常卡片',
+        pythonInsights?.forecast?.summary || '可继续补充短时趋势预测。',
+        analysis?.pathology_summary || '可继续补充病理解释。'
+    ],
+    suggested_demo_flow: [
+        '先展示主图、核心指标和异常卡片。',
+        '再打开 AI Briefing，快速生成一套讲解提纲。',
+        '最后切到 Copilot 与 Workflow，展示多轮问答和执行闭环。'
+    ],
+    next_actions: [
+        '继续追问某个异常卡片的原因。',
+        '把 Briefing 用作现场讲解或产品说明草稿。',
+        '结合 Workflow 页面说明如何接入协作平台。'
+    ],
+    source: 'rules'
+});
+
 const requestBackendPipeline = async (data) => {
     const response = await fetch('/api/pipeline/analyze', {
         method: 'POST',
@@ -427,7 +453,7 @@ const requestBackendCsvParse = async (csvText) => {
     return response.json();
 };
 
-const requestCopilotAnswer = async ({ question, metrics, analysis, pythonInsights, history }) => {
+const requestCopilotAnswer = async ({ question, metrics, analysis, pythonInsights, history, mode }) => {
     const response = await fetch('/api/ai/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -437,6 +463,23 @@ const requestCopilotAnswer = async ({ question, metrics, analysis, pythonInsight
             analysis,
             signalInsights: pythonInsights,
             history,
+            mode: mode || 'general',
+            locale: 'zh-CN'
+        })
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+};
+
+const requestAIBrief = async ({ metrics, analysis, pythonInsights }) => {
+    const response = await fetch('/api/ai/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            metrics,
+            analysis,
+            signalInsights: pythonInsights,
             locale: 'zh-CN'
         })
     });
@@ -675,9 +718,12 @@ function App() {
     const [videoUrl, setVideoUrl] = useState('/video_placeholder.svg');
     const [status, setStatus] = useState('idle');
     const [workflowStatus, setWorkflowStatus] = useState('idle');
+    const [briefStatus, setBriefStatus] = useState('idle');
     const [copilotQuestion, setCopilotQuestion] = useState('');
     const [copilotStatus, setCopilotStatus] = useState('idle');
     const [copilotMessages, setCopilotMessages] = useState([]);
+    const [copilotMode, setCopilotMode] = useState('general');
+    const [aiBrief, setAiBrief] = useState(null);
     const [showUpload, setShowUpload] = useState(true);
 
     useEffect(() => {
@@ -694,11 +740,13 @@ function App() {
         setAnalysis(null);
         setPythonInsights(null);
         setWorkflowPlan(null);
+        setAiBrief(null);
         setVideoUrl('/video_placeholder.svg');
         setCopilotMessages([]);
         setCopilotQuestion('');
         setStatus('idle');
         setWorkflowStatus('idle');
+        setBriefStatus('idle');
         setCopilotStatus('idle');
     };
 
@@ -760,6 +808,7 @@ function App() {
                 metrics,
                 analysis,
                 pythonInsights,
+                mode: copilotMode,
                 history: nextMessages.slice(0, -1).map((message) => ({
                     role: message.role,
                     content: message.content
@@ -800,6 +849,27 @@ function App() {
             }
         ]);
         setCopilotStatus('done');
+    };
+
+    const handleGenerateBrief = async () => {
+        if (!metrics || !analysis) return;
+        setBriefStatus('loading');
+
+        try {
+            const result = await requestAIBrief({
+                metrics,
+                analysis,
+                pythonInsights
+            });
+            setAiBrief(result.brief);
+            setBriefStatus('done');
+            return;
+        } catch (error) {
+            console.warn('Brief backend unavailable, using local brief.', error);
+        }
+
+        setAiBrief(buildLocalBrief({ metrics, analysis, pythonInsights }));
+        setBriefStatus('done');
     };
 
     const handleGenerateWorkflow = async () => {
@@ -1218,6 +1288,70 @@ function App() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div className="rounded-[30px] border border-slate-200 bg-white/85 p-6 shadow-sm">
+                                        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <h3 className="text-lg font-black text-slate-900">AI Briefing</h3>
+                                                <p className="mt-1 text-sm text-slate-500">一键把当前分析整理成讲解提纲、风险提示和演示流程。</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Pill tone={aiBrief?.source === 'ai' ? 'success' : 'warning'}>
+                                                    {aiBrief ? `来源 ${aiBrief.source}` : '等待生成'}
+                                                </Pill>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleGenerateBrief}
+                                                    disabled={!analysis || briefStatus === 'loading'}
+                                                    className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    {briefStatus === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                                                    生成 AI Briefing
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {!aiBrief && (
+                                            <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                                                运行分析后点击生成，系统会自动整理一版 AI 提纲，适合直接拿来讲解。
+                                            </div>
+                                        )}
+                                        {aiBrief && (
+                                            <div className="grid gap-4 lg:grid-cols-2">
+                                                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                                                    <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">{aiBrief.title}</div>
+                                                    <p className="mt-3 text-sm leading-7 text-slate-700">{aiBrief.summary}</p>
+                                                    <div className="mt-4 space-y-2">
+                                                        {(aiBrief.talking_points || []).map((item) => (
+                                                            <div key={item} className="rounded-[16px] bg-white px-3 py-2 text-sm text-slate-600">{item}</div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4">
+                                                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                                                        <div className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">风险提示</div>
+                                                        <div className="space-y-2">
+                                                            {(aiBrief.risk_callouts || []).map((item) => (
+                                                                <div key={item} className="rounded-[16px] bg-white px-3 py-2 text-sm text-slate-600">{item}</div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-5">
+                                                        <div className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">演示流程</div>
+                                                        <div className="space-y-2">
+                                                            {(aiBrief.suggested_demo_flow || []).map((item) => (
+                                                                <div key={item} className="rounded-[16px] bg-white px-3 py-2 text-sm text-slate-600">{item}</div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="mt-4 flex flex-wrap gap-2">
+                                                            {(aiBrief.next_actions || []).map((item) => (
+                                                                <span key={item} className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">{item}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </section>
@@ -1235,6 +1369,27 @@ function App() {
                             </div>
 
                             <div className="space-y-4">
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        ['general', '综合模式'],
+                                        ['clinical', '临床解释'],
+                                        ['product', '产品讲解'],
+                                        ['workflow', '执行流程']
+                                    ].map(([id, label]) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            onClick={() => setCopilotMode(id)}
+                                            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                                                copilotMode === id
+                                                    ? 'bg-slate-950 text-white'
+                                                    : 'border border-slate-200 bg-white text-slate-700 hover:border-sky-300'
+                                            }`}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
                                 <div className="flex flex-wrap gap-2">
                                     {suggestedQuestions.map((question) => (
                                         <AskChip key={question} text={question} onClick={handleAskCopilot} />
