@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-0: #f4f7fb;
+  --bg-1: #ffffff;
+  --ink: #122033;
+  --ink-soft: #4f6277;
+  --line: rgba(15, 23, 42, 0.08);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-slate-50 text-slate-900;
+  @apply text-slate-900 antialiased;
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.15), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 24%),
+    linear-gradient(180deg, #f7fafc 0%, #eef4fb 100%);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(59, 130, 246, 0.18);
+  color: #0f172a;
 }

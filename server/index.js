@@ -2,8 +2,10 @@ import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { config } from './config.js';
 import { calculateMetrics, normalizeCGMData, parseCSV } from './services/cgmMetrics.js';
-import { analyzePathology } from './services/aiClient.js';
+import { analyzePathology, answerCopilotQuestion } from './services/aiClient.js';
 import { generateVideo } from './services/videoService.js';
+import { generatePythonInsights } from './services/pythonInsights.js';
+import { generateAgentWorkflow } from './services/workflowService.js';
 import { HttpError, getErrorPayload, parseRequestUrl, readJsonBody, readRequestBody, sendJson, setCorsHeaders } from './utils/http.js';
 
 const getPayloadData = (body) => body.data || body.cgmData || body.points || [];
@@ -78,11 +80,16 @@ export const handleRequest = async (req, res) => {
             const body = await readJsonBody(req, config.bodyLimitBytes);
             let metrics = body.metrics;
             let recentData = body.recentData || [];
+            let pythonInsights = body.pythonInsights || null;
 
             if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
                 const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
                 metrics = metricsResponse.metrics;
                 recentData = metricsResponse.data.slice(-96);
+                pythonInsights = await generatePythonInsights({
+                    data: metricsResponse.data,
+                    metrics
+                });
             }
 
             if (!metrics) throw new HttpError(400, 'metrics or CGM data is required');
@@ -91,10 +98,78 @@ export const handleRequest = async (req, res) => {
                 metrics,
                 recentData,
                 locale: body.locale || 'en',
+                requireAI: Boolean(body.requireAI),
+                pythonInsights
+            });
+
+            sendJson(res, 200, { analysis, pythonInsights });
+            return;
+        }
+
+        if (req.method === 'POST' && url.pathname === '/api/ai/copilot') {
+            const body = await readJsonBody(req, config.bodyLimitBytes);
+            let metrics = body.metrics;
+            let analysis = body.analysis || null;
+            let pythonInsights = body.pythonInsights || null;
+
+            if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
+                const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
+                metrics = metricsResponse.metrics;
+                pythonInsights = await generatePythonInsights({
+                    data: metricsResponse.data,
+                    metrics
+                });
+            }
+
+            if (!metrics) throw new HttpError(400, 'metrics or CGM data is required');
+
+            const answer = await answerCopilotQuestion({
+                question: body.question,
+                metrics,
+                analysis,
+                pythonInsights,
+                locale: body.locale || 'en',
+                requireAI: Boolean(body.requireAI),
+                history: Array.isArray(body.history) ? body.history : []
+            });
+
+            sendJson(res, 200, { answer, pythonInsights });
+            return;
+        }
+
+        if (req.method === 'POST' && url.pathname === '/api/agent/workflow') {
+            const body = await readJsonBody(req, config.bodyLimitBytes);
+            let metrics = body.metrics;
+            let analysis = body.analysis || null;
+            let pythonInsights = body.pythonInsights || null;
+
+            if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
+                const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
+                metrics = metricsResponse.metrics;
+                pythonInsights = await generatePythonInsights({
+                    data: metricsResponse.data,
+                    metrics
+                });
+                analysis = await analyzePathology({
+                    metrics,
+                    recentData: metricsResponse.data.slice(-96),
+                    locale: body.locale || 'en',
+                    requireAI: Boolean(body.requireAI),
+                    pythonInsights
+                });
+            }
+
+            if (!metrics) throw new HttpError(400, 'metrics or CGM data is required');
+
+            const workflow = await generateAgentWorkflow({
+                metrics,
+                analysis,
+                pythonInsights,
+                locale: body.locale || 'en',
                 requireAI: Boolean(body.requireAI)
             });
 
-            sendJson(res, 200, { analysis });
+            sendJson(res, 200, { workflow, pythonInsights, analysis });
             return;
         }
 
@@ -111,11 +186,16 @@ export const handleRequest = async (req, res) => {
         if (req.method === 'POST' && url.pathname === '/api/pipeline/analyze') {
             const body = await readJsonBody(req, config.bodyLimitBytes);
             const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
+            const pythonInsights = await generatePythonInsights({
+                data: metricsResponse.data,
+                metrics: metricsResponse.metrics
+            });
             const analysis = await analyzePathology({
                 metrics: metricsResponse.metrics,
                 recentData: metricsResponse.data.slice(-96),
                 locale: body.locale || 'en',
-                requireAI: Boolean(body.requireAI)
+                requireAI: Boolean(body.requireAI),
+                pythonInsights
             });
             const video = await generateVideo({
                 prompt: analysis.video_generation_prompt,
@@ -124,6 +204,7 @@ export const handleRequest = async (req, res) => {
 
             sendJson(res, 200, {
                 ...metricsResponse,
+                pythonInsights,
                 analysis,
                 video
             });
