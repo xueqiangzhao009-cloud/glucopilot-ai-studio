@@ -7,7 +7,7 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
     const highRisk = Number(metrics?.cv) > 36 || Number(metrics?.tar) > 25;
 
     return {
-        title: isChinese ? 'GlucoScope Agent Workflow' : 'GlucoScope Agent Workflow',
+        title: isChinese ? 'GlucoPilot Agent Workflow' : 'GlucoPilot Agent Workflow',
         summary: isChinese
             ? `围绕“${dominantPattern}”构建一条从数据洞察到协作平台执行的 Agent 闭环。`
             : `Build an end-to-end agent loop around "${dominantPattern}".`,

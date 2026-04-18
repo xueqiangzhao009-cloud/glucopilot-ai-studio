@@ -1,6 +1,6 @@
-# GlucoScope
+# GlucoPilot AI Studio
 
-GlucoScope 是一个面向连续血糖监测（CGM）数据的 AI 演示项目。它把数据输入、临床指标计算、CGM Signal Engine、AI 多轮问答、病理风险解释和协作工作流方案串成一条完整链路，适合做产品原型、方案演示或课程展示。
+GlucoPilot AI Studio 是一个面向连续血糖监测（CGM）数据的 AI 演示项目。它把数据输入、临床指标计算、CGM Signal Engine、AI 多轮问答、病理风险解释和协作工作流方案串成一条完整链路，适合做产品原型、方案演示或课程展示。
 
 > 本项目仅用于演示和研究，不构成医学诊断或治疗建议。
 

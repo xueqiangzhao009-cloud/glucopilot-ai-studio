@@ -283,7 +283,7 @@ const buildLocalAnalysis = (metrics, pythonInsights) => {
 };
 
 const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
-    title: 'GlucoScope Agent Workflow',
+    title: 'GlucoPilot Agent Workflow',
     summary: `围绕“${pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || '关键时段优化'}”构建一条从数据洞察到协作平台执行的 Agent 闭环。`,
     positioning: '把健康数据分析从一次性报告升级成可持续协作的办公场景智能体。',
     workflow_steps: [
@@ -786,7 +786,7 @@ function App() {
                             </Pill>
                             <div className="space-y-4">
                                 <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl">
-                                    GlucoScope
+                                    GlucoPilot AI Studio
                                 </h1>
                                 <p className="max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
                                     把糖尿病数据可视化 Demo 升级成更完整的 AI 产品原型：
@@ -828,7 +828,7 @@ function App() {
                                 <Activity className="h-5 w-5" />
                             </div>
                             <div>
-                                <div className="text-sm font-black text-slate-900">GlucoScope</div>
+                                <div className="text-sm font-black text-slate-900">GlucoPilot AI Studio</div>
                                 <div className="text-xs text-slate-500">AI Copilot + Signal Engine Workflow Demo</div>
                             </div>
                         </div>
