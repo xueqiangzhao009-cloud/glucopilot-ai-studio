@@ -158,12 +158,12 @@ const buildFallbackCopilotAnswer = ({ metrics, analysis, pythonInsights, locale,
     const anomaly = pythonInsights?.anomalyCards?.[0];
     const dominantPattern = pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || (isChinese ? '当前数据模式' : 'current signal pattern');
     const answer = isChinese
-        ? `我会优先把“${dominantPattern}”讲成这份作品的核心亮点。${anomaly ? `当前最值得展示的是“${anomaly.title}”，证据是：${anomaly.evidence}。` : `当前核心指标为 TIR ${metrics?.tir}%、TAR ${metrics?.tar}%、CV ${metrics?.cv}%。`} 如果从比赛表达看，更强的方式是把它包装成一个会主动发现异常、解释原因、并推动下一步动作的 AI Copilot。${history.length > 1 ? '你现在已经进入多轮对话场景，这本身就是一个很好的演示点。' : ''}`
-        : `I would frame "${dominantPattern}" as the main strength of the project. ${anomaly ? `The best signal to demo is "${anomaly.title}" because ${anomaly.evidence}.` : `The core metrics are TIR ${metrics?.tir}%, TAR ${metrics?.tar}%, and CV ${metrics?.cv}%.`} For a competition demo, the stronger framing is an AI copilot that detects anomalies, explains causes, and drives the next action.${history.length > 1 ? ' The multi-turn flow itself is also a useful demo point.' : ''}`;
+        ? `我会优先把“${dominantPattern}”讲成这份作品的核心亮点。${anomaly ? `当前最值得展示的是“${anomaly.title}”，证据是：${anomaly.evidence}。` : `当前核心指标为 TIR ${metrics?.tir}%、TAR ${metrics?.tar}%、CV ${metrics?.cv}%。`} 更强的表达方式，是把它包装成一个会主动发现异常、解释原因、并推动下一步动作的 AI Copilot。${history.length > 1 ? '你现在已经进入多轮对话场景，这本身就是一个很好的演示点。' : ''}`
+        : `I would frame "${dominantPattern}" as the main strength of the project. ${anomaly ? `The best signal to demo is "${anomaly.title}" because ${anomaly.evidence}.` : `The core metrics are TIR ${metrics?.tir}%, TAR ${metrics?.tar}%, and CV ${metrics?.cv}%.`} A stronger framing is an AI copilot that detects anomalies, explains causes, and drives the next action.${history.length > 1 ? ' The multi-turn flow itself is also a useful demo point.' : ''}`;
 
     return {
         answer,
-        follow_up: isChinese ? '你可以继续追问某个异常卡片、某个时段，或者让系统把它翻译成飞书里的工作流动作。' : 'You can next ask about an anomaly card, a time window, or how this should map into a workflow.',
+        follow_up: isChinese ? '你可以继续追问某个异常卡片、某个时段，或者让系统把它翻译成协作平台里的工作流动作。' : 'You can next ask about an anomaly card, a time window, or how this should map into a workflow.',
         confidence: anomaly ? 'high' : 'medium',
         highlights: isChinese
             ? ['多轮对话上下文已接入', '可基于 Python 信号做追问', '适合演示主动式 Copilot']

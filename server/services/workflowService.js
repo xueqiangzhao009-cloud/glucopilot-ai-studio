@@ -7,9 +7,9 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
     const highRisk = Number(metrics?.cv) > 36 || Number(metrics?.tar) > 25;
 
     return {
-        title: isChinese ? 'GlucoPilot Agent Workflow' : 'GlucoPilot Agent Workflow',
+        title: isChinese ? 'GlucoScope Agent Workflow' : 'GlucoScope Agent Workflow',
         summary: isChinese
-            ? `围绕“${dominantPattern}”构建一条从数据洞察到飞书内执行的 Agent 闭环。`
+            ? `围绕“${dominantPattern}”构建一条从数据洞察到协作平台执行的 Agent 闭环。`
             : `Build an end-to-end agent loop around "${dominantPattern}".`,
         positioning: isChinese
             ? '把健康数据分析从一次性报告升级成可持续协作的办公场景智能体。'
@@ -33,20 +33,20 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
                 id: 'copilot',
                 title: isChinese ? '多轮 Copilot 解释' : 'Multi-turn Copilot',
                 owner: isChinese ? '分析 Copilot' : 'Analytics Copilot',
-                goal: isChinese ? '支持评委追问、用户追问与方案解释' : 'Support judge questions, user follow-ups, and plan explanations',
+                goal: isChinese ? '支持用户追问、连续追问与方案解释' : 'Support user follow-ups and plan explanations',
                 automation: isChinese ? '保留对话历史，持续生成下一步建议' : 'Retain chat history and keep generating next actions'
             },
             {
                 id: 'lark',
-                title: isChinese ? '飞书内执行动作' : 'Execute in Lark',
-                owner: isChinese ? 'Lark Workflow Agent' : 'Lark Workflow Agent',
-                goal: isChinese ? '把风险信号推送到 IM / 多维表格 / 待办 / Docs' : 'Push signals into IM / Bitable / Todo / Docs',
+                title: isChinese ? '协作平台执行动作' : 'Collaboration Workflow',
+                owner: isChinese ? 'Workflow Agent' : 'Workflow Agent',
+                goal: isChinese ? '把风险信号推送到消息 / 表格 / 待办 / 文档' : 'Push signals into chat, tables, todo, and docs',
                 automation: isChinese ? '形成提醒、记录、复盘和协作闭环' : 'Create an alert, logging, review, and collaboration loop'
             }
         ],
         feishu_surfaces: [
             {
-                surface: '飞书 IM',
+                surface: isChinese ? '消息入口' : 'Chat',
                 fit: isChinese ? '适合主动提醒和多轮问答入口' : 'Great for proactive nudges and chat entry',
                 action: isChinese ? '推送“异常波段摘要 + 继续追问按钮”' : 'Send anomaly summary with follow-up actions'
             },
@@ -56,7 +56,7 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
                 action: isChinese ? '写入日维度信号和风险标签' : 'Write daily signals and risk labels'
             },
             {
-                surface: '飞书 Docs',
+                surface: isChinese ? '文档空间' : 'Docs',
                 fit: isChinese ? '适合生成病例摘要、答辩材料和周报' : 'Great for reports and demo narratives',
                 action: isChinese ? '生成结构化分析文档和答辩摘要' : 'Generate structured reports and demo notes'
             },
@@ -70,7 +70,7 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
             ? [
                 '先上传一段 CGM 数据，让系统在 10 秒内跑完指标、Python 信号和 AI 分析。',
                 '切到 Copilot 面板，连续追问两到三轮，展示真实多轮对话能力。',
-                '切到 Agent Workflow 页面，说明这些结果如何映射到飞书 IM、多维表格和 Docs。',
+                '切到 Agent Workflow 页面，说明这些结果如何映射到消息、表格和文档系统。',
                 highRisk ? '重点强调系统如何把高风险信号转成主动提醒与复盘任务。' : '重点强调系统如何把长期稳定跟踪做成可持续的工作流。'
             ]
             : [
@@ -115,7 +115,7 @@ export const generateAgentWorkflow = async ({
                     anomalyCards: pythonInsights?.anomalyCards,
                     mealSignals: pythonInsights?.mealSignals
                 })}`,
-                'Focus on how this project should map into Feishu or Lark collaboration scenarios.'
+                'Focus on how this project should map into collaboration software scenarios.'
             ].join('\n')
         });
 

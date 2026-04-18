@@ -258,8 +258,8 @@ const buildLocalPythonInsights = (data, metrics) => {
         anomalyCards: anomalies,
         suggestedQuestions: [
             '最值得优先解释的风险是什么？',
-            '如果我是评委，这个作品最能体现 AI 能力的点是什么？',
-            '这份结果应该如何接进飞书场景？'
+            '这个作品最能体现 AI 能力的点是什么？',
+            '这份结果应该如何接进协作工作流？'
         ]
     };
 };
@@ -283,8 +283,8 @@ const buildLocalAnalysis = (metrics, pythonInsights) => {
 };
 
 const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
-    title: 'GlucoPilot Agent Workflow',
-    summary: `围绕“${pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || '关键时段优化'}”构建一条从数据洞察到飞书执行的 Agent 闭环。`,
+    title: 'GlucoScope Agent Workflow',
+    summary: `围绕“${pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || '关键时段优化'}”构建一条从数据洞察到协作平台执行的 Agent 闭环。`,
     positioning: '把健康数据分析从一次性报告升级成可持续协作的办公场景智能体。',
     workflow_steps: [
         {
@@ -305,20 +305,20 @@ const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
             id: 'copilot',
             title: '多轮 Copilot 解释',
             owner: 'AI Copilot',
-            goal: '支持追问、评委提问和方案解释',
+            goal: '支持追问、连续对话和方案解释',
             automation: '保留对话历史并生成下一步建议'
         },
         {
             id: 'lark',
-            title: '飞书场景执行',
-            owner: 'Lark Workflow Agent',
-            goal: '推送到 IM、多维表格、Docs 与待办',
+            title: '协作平台执行',
+            owner: 'Workflow Agent',
+            goal: '推送到消息、表格、文档与待办',
             automation: '形成提醒、记录、复盘和协作闭环'
         }
     ],
     feishu_surfaces: [
         {
-            surface: '飞书 IM',
+            surface: '消息入口',
             fit: '适合主动提醒和多轮问答入口',
             action: '推送异常摘要和继续追问按钮'
         },
@@ -328,7 +328,7 @@ const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
             action: '写入日维度指标、风险等级和处理状态'
         },
         {
-            surface: '飞书 Docs',
+            surface: '文档空间',
             fit: '适合生成答辩材料与病例摘要',
             action: '自动生成项目说明与结果复盘'
         },
@@ -341,7 +341,7 @@ const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
     demo_script: [
         '上传数据，10 秒内跑完指标、信号引擎分析与 AI 结果。',
         '进入 Copilot 面板，连续追问两到三轮，展示真实多轮问答。',
-        '切到 Workflow 页面，说明如何接进飞书 IM、多维表格和 Docs。',
+        '切到 Workflow 页面，说明如何接进消息、表格和文档系统。',
         Number(metrics?.cv) > 36 || Number(metrics?.tar) > 25
             ? '强调系统如何把高风险信号转成主动提醒和复盘任务。'
             : '强调系统如何把长期稳定跟踪做成持续协作工作流。'
@@ -743,7 +743,7 @@ function App() {
                 role: 'assistant',
                 content: fallbackText,
                 meta: {
-                    follow_up: '你可以继续追问某个异常卡片，或者让系统把它翻译成飞书里的执行流程。',
+                    follow_up: '你可以继续追问某个异常卡片，或者让系统把它翻译成协作平台里的执行流程。',
                     confidence: 'medium',
                     highlights: ['支持多轮对话', '能结合结构化信号解释', '适合演示工作流闭环'],
                     source: 'rules'
@@ -782,23 +782,23 @@ function App() {
                         <div className="space-y-6">
                             <Pill tone="info">
                                 <Sparkles className="h-3.5 w-3.5" />
-                                Feishu AI Challenge Ready
+                                Product Demo Ready
                             </Pill>
                             <div className="space-y-4">
                                 <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl">
-                                    GlucoPilot AI Studio
+                                    GlucoScope
                                 </h1>
                                 <p className="max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
-                                    把糖尿病数据可视化 Demo 升级成更适合比赛展示的 AI 产品原型：
+                                    把糖尿病数据可视化 Demo 升级成更完整的 AI 产品原型：
                                     前端负责交互与讲述，后端负责编排，CGM Signal Engine 负责结构化洞察，Copilot 负责多轮问答，
-                                    Agent Workflow 页负责说明如何接进飞书 IM、多维表格、Docs 和待办。
+                                    Agent Workflow 页负责说明如何接进消息、表格、文档和待办系统。
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <Pill tone="neutral"><Brain className="h-3.5 w-3.5" />AI Narrative</Pill>
                                 <Pill tone="neutral"><FlaskConical className="h-3.5 w-3.5" />CGM Signal Engine</Pill>
                                 <Pill tone="neutral"><Bot className="h-3.5 w-3.5" />Multi-turn Copilot</Pill>
-                                <Pill tone="neutral"><Activity className="h-3.5 w-3.5" />Feishu Workflow Story</Pill>
+                                <Pill tone="neutral"><Activity className="h-3.5 w-3.5" />Workflow Story</Pill>
                             </div>
                         </div>
                         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
@@ -828,8 +828,8 @@ function App() {
                                 <Activity className="h-5 w-5" />
                             </div>
                             <div>
-                                <div className="text-sm font-black text-slate-900">GlucoPilot AI Studio</div>
-                                <div className="text-xs text-slate-500">更适合比赛展示的 AI Copilot + Workflow Demo</div>
+                                <div className="text-sm font-black text-slate-900">GlucoScope</div>
+                                <div className="text-xs text-slate-500">AI Copilot + Signal Engine Workflow Demo</div>
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -861,7 +861,7 @@ function App() {
                         onClick={() => setActivePage('workflow')}
                         icon={CalendarRange}
                         label="Agent Workflow 页"
-                        helper="飞书场景接入、Agent 流程和答辩话术"
+                        helper="协作工作流接入、Agent 流程和执行方案"
                     />
                 </section>
 
@@ -1089,7 +1089,7 @@ function App() {
                             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <h2 className="text-lg font-black text-slate-900">AI Copilot 多轮问答</h2>
-                                    <p className="mt-1 text-sm text-slate-500">支持真实多轮上下文，适合直接拿去向评委演示。</p>
+                                    <p className="mt-1 text-sm text-slate-500">支持真实多轮上下文，适合直接做产品演示和交互讲解。</p>
                                 </div>
                                 <Pill tone={copilotMessages.length ? 'success' : 'neutral'}>
                                     <MessageSquare className="h-3.5 w-3.5" />
@@ -1149,7 +1149,7 @@ function App() {
                                     <textarea
                                         value={copilotQuestion}
                                         onChange={(event) => setCopilotQuestion(event.target.value)}
-                                        placeholder="比如：如果我是评委，这个作品最能体现 AI 能力的地方是什么？"
+                                        placeholder="比如：这个作品最能体现 AI 能力的地方是什么？"
                                         className="min-h-[108px] rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm leading-7 text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white"
                                     />
                                     <button
@@ -1176,10 +1176,10 @@ function App() {
                                         <CalendarRange className="h-3.5 w-3.5" />
                                         Agent Workflow Showcase
                                     </Pill>
-                                    <h2 className="text-3xl font-black tracking-tight text-slate-950">从 CGM 分析到飞书内执行的 Agent 闭环</h2>
+                                    <h2 className="text-3xl font-black tracking-tight text-slate-950">从 CGM 分析到协作平台执行的 Agent 闭环</h2>
                                     <p className="text-base leading-8 text-slate-600">
                                         这一页不是单纯讲技术栈，而是帮你把作品说成“能接进真实办公场景”的 Agent 方案：
-                                        数据进来之后如何被信号引擎挖掘、如何进入 Copilot 多轮对话、最后如何落在飞书 IM、多维表格、Docs 和待办里。
+                                        数据进来之后如何被信号引擎挖掘、如何进入 Copilot 多轮对话、最后如何落在消息、表格、文档和待办系统里。
                                     </p>
                                     <div className="flex flex-wrap gap-3">
                                         <button
@@ -1200,7 +1200,7 @@ function App() {
                                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
                                         <div className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">作品定位</div>
                                         <div className="text-lg font-black text-slate-900">{workflowPlan?.title || 'AI Health Workflow Agent'}</div>
-                                        <p className="mt-2 text-sm leading-6 text-slate-500">{workflowPlan?.summary || '运行生成后，这里会展示更像答辩页面的产品定位。'}</p>
+                                        <p className="mt-2 text-sm leading-6 text-slate-500">{workflowPlan?.summary || '运行生成后，这里会展示这套工作流的产品定位。'}</p>
                                     </div>
                                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
                                         <div className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">当前主模式</div>
@@ -1213,7 +1213,7 @@ function App() {
 
                         {!workflowPlan && (
                             <div className="rounded-[28px] border border-dashed border-slate-200 bg-white/70 p-8 text-center text-sm text-slate-500">
-                                先运行 AI 分析，再点击“生成 Agent Workflow”。这会把当前数据结果翻译成飞书场景接入方案。
+                                先运行 AI 分析，再点击“生成 Agent Workflow”。这会把当前数据结果翻译成协作平台接入方案。
                             </div>
                         )}
 
@@ -1240,7 +1240,7 @@ function App() {
                                     <div className="rounded-[28px] border border-slate-200 bg-white/85 p-6 shadow-sm">
                                         <div className="mb-5 flex items-center gap-2">
                                             <Bot className="h-5 w-5 text-sky-600" />
-                                            <h3 className="text-lg font-black text-slate-900">飞书场景接入建议</h3>
+                                            <h3 className="text-lg font-black text-slate-900">协作平台接入建议</h3>
                                         </div>
                                         <div className="space-y-4">
                                             {(workflowPlan.feishu_surfaces || []).map((surface) => (
