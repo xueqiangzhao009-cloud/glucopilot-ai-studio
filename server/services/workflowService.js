@@ -25,7 +25,7 @@ const buildFallbackWorkflow = ({ metrics, analysis, pythonInsights, locale = 'zh
             {
                 id: 'signals',
                 title: isChinese ? 'Python 信号挖掘' : 'Python Signal Mining',
-                owner: 'Python Signal Engine',
+                owner: 'CGM Signal Engine',
                 goal: isChinese ? '生成时段画像、餐后峰值和异常卡片' : 'Generate window profiles, meal peaks, and anomaly cards',
                 automation: isChinese ? '作为下游 AI 的结构化 grounding' : 'Ground downstream AI with structured signals'
             },

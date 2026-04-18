@@ -227,7 +227,7 @@ const buildLocalPythonInsights = (data, metrics) => {
         summary: {
             overallRisk: Number(metrics.cv) > 36 || Number(metrics.tar) > 25 ? 'high' : 'moderate',
             dominantPattern: anomalies[0].title,
-            narrative: '当前使用浏览器内回退分析，建议启动后端以获得完整 Python Signal Engine 结果。',
+            narrative: '当前使用浏览器内回退分析，建议启动后端以获得完整 Signal Engine 结果。',
             coverageHours: 24,
             meanGlucose: metrics.mean,
             samples: data.length,
@@ -296,8 +296,8 @@ const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
         },
         {
             id: 'signals',
-            title: 'Python 信号挖掘',
-            owner: 'Python Signal Engine',
+            title: '信号引擎分析',
+            owner: 'CGM Signal Engine',
             goal: '生成时段画像、异常卡片和餐后峰值',
             automation: '作为 Copilot 的结构化 grounding'
         },
@@ -339,7 +339,7 @@ const buildLocalWorkflow = ({ metrics, analysis, pythonInsights }) => ({
         }
     ],
     demo_script: [
-        '上传数据，10 秒内跑完指标、Python 信号与 AI 分析。',
+        '上传数据，10 秒内跑完指标、信号引擎分析与 AI 结果。',
         '进入 Copilot 面板，连续追问两到三轮，展示真实多轮问答。',
         '切到 Workflow 页面，说明如何接进飞书 IM、多维表格和 Docs。',
         Number(metrics?.cv) > 36 || Number(metrics?.tar) > 25
@@ -386,7 +386,7 @@ const requestCopilotAnswer = async ({ question, metrics, analysis, pythonInsight
             question,
             metrics,
             analysis,
-            pythonInsights,
+            signalInsights: pythonInsights,
             history,
             locale: 'zh-CN'
         })
@@ -403,7 +403,7 @@ const requestWorkflowPlan = async ({ metrics, analysis, pythonInsights }) => {
         body: JSON.stringify({
             metrics,
             analysis,
-            pythonInsights,
+            signalInsights: pythonInsights,
             locale: 'zh-CN'
         })
     });
@@ -569,7 +569,7 @@ const DataUploadCard = ({ onDataLoaded }) => {
                         >
                             <Upload className="mb-4 h-6 w-6 text-sky-600" />
                             <div className="font-bold text-slate-900">上传 CGM CSV</div>
-                            <p className="mt-2 text-sm text-slate-500">自动识别单位，直接进入 Python + AI 分析链路。</p>
+                            <p className="mt-2 text-sm text-slate-500">自动识别单位，直接进入 Signal Engine + AI 分析链路。</p>
                         </button>
                         <button
                             type="button"
@@ -672,7 +672,7 @@ function App() {
                 setCgmData(result.data || cgmData);
                 setMetrics(result.metrics || metrics);
                 setAnalysis(result.analysis || null);
-                setPythonInsights(result.pythonInsights || null);
+                setPythonInsights(result.signalInsights || result.pythonInsights || null);
                 setVideoUrl(result.video?.videoUrl || '/video_placeholder.svg');
                 setWorkflowPlan(null);
                 setCopilotMessages([]);
@@ -736,7 +736,7 @@ function App() {
             console.warn('Copilot backend unavailable, using local answer.', error);
         }
 
-        const fallbackText = `我会优先把“${pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || '关键时段优化'}”讲成这份作品的核心亮点。更强的表达方式，是让 AI 不只给出结论，还能结合 Python 信号做多轮追问与工作流落地。`;
+        const fallbackText = `我会优先把“${pythonInsights?.summary?.dominantPattern || analysis?.clinical_focus || '关键时段优化'}”讲成这份作品的核心亮点。更强的表达方式，是让 AI 不只给出结论，还能结合信号引擎结果做多轮追问与工作流落地。`;
         setCopilotMessages([
             ...nextMessages,
             {
@@ -790,13 +790,13 @@ function App() {
                                 </h1>
                                 <p className="max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
                                     把糖尿病数据可视化 Demo 升级成更适合比赛展示的 AI 产品原型：
-                                    前端负责交互与讲述，后端负责编排，Python Signal Engine 负责结构化洞察，Copilot 负责多轮问答，
+                                    前端负责交互与讲述，后端负责编排，CGM Signal Engine 负责结构化洞察，Copilot 负责多轮问答，
                                     Agent Workflow 页负责说明如何接进飞书 IM、多维表格、Docs 和待办。
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <Pill tone="neutral"><Brain className="h-3.5 w-3.5" />AI Narrative</Pill>
-                                <Pill tone="neutral"><FlaskConical className="h-3.5 w-3.5" />Python Signal Engine</Pill>
+                                <Pill tone="neutral"><FlaskConical className="h-3.5 w-3.5" />CGM Signal Engine</Pill>
                                 <Pill tone="neutral"><Bot className="h-3.5 w-3.5" />Multi-turn Copilot</Pill>
                                 <Pill tone="neutral"><Activity className="h-3.5 w-3.5" />Feishu Workflow Story</Pill>
                             </div>
@@ -808,7 +808,7 @@ function App() {
                                 <p className="mt-2 text-sm text-slate-500">当前载入点位，默认覆盖 14 天，每 15 分钟一条。</p>
                             </div>
                             <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-5">
-                                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><FlaskConical className="h-4 w-4 text-emerald-600" />Python</div>
+                                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><FlaskConical className="h-4 w-4 text-emerald-600" />Signal Engine</div>
                                 <div className="text-3xl font-black">{pythonInsights?.generated ? 'ON' : 'READY'}</div>
                                 <p className="mt-2 text-sm text-slate-500">产出时段画像、异常卡片和建议问题。</p>
                             </div>
@@ -854,7 +854,7 @@ function App() {
                         onClick={() => setActivePage('copilot')}
                         icon={MessageSquare}
                         label="Copilot 演示页"
-                        helper="多轮问答、指标解释、Python 信号展示"
+                        helper="多轮问答、指标解释、信号引擎展示"
                     />
                     <TabButton
                         active={activePage === 'workflow'}
@@ -947,7 +947,7 @@ function App() {
                                         <Brain className="mb-4 h-10 w-10 text-slate-300" />
                                         <h4 className="text-lg font-bold text-slate-900">准备好做一次完整演示</h4>
                                         <p className="mt-2 max-w-sm text-sm leading-7 text-slate-500">
-                                            点击“运行 AI 分析”后，系统会联动临床指标、Python 信号、AI 分析文本和多轮 Copilot。
+                                            点击“运行 AI 分析”后，系统会联动临床指标、信号引擎结果、AI 分析文本和多轮 Copilot。
                                         </p>
                                     </div>
                                 )}
@@ -1005,12 +1005,12 @@ function App() {
                         <section className="space-y-5">
                             <div className="flex items-center gap-2">
                                 <FlaskConical className="h-5 w-5 text-emerald-600" />
-                                <h2 className="text-lg font-black text-slate-900">Python Signal Engine</h2>
+                                <h2 className="text-lg font-black text-slate-900">CGM Signal Engine</h2>
                             </div>
 
                             {!pythonInsights && (
                                 <div className="rounded-[28px] border border-dashed border-slate-200 bg-white/70 p-8 text-center text-sm text-slate-500">
-                                    运行分析后，这里会出现 Python 生成的时段信号、异常卡片、餐后峰值和建议追问。
+                                    运行分析后，这里会出现信号引擎生成的时段信号、异常卡片、餐后峰值和建议追问。
                                 </div>
                             )}
 
@@ -1021,10 +1021,10 @@ function App() {
                                             <div className="mb-4 flex items-center justify-between gap-3">
                                                 <div>
                                                     <h3 className="text-lg font-black text-slate-900">结构化摘要</h3>
-                                                    <p className="mt-1 text-sm text-slate-500">这部分就是你在比赛里可以重点讲的 Python 能力。</p>
+                                                    <p className="mt-1 text-sm text-slate-500">这部分就是你在比赛里可以重点讲的信号引擎能力。</p>
                                                 </div>
                                                 <Pill tone={pythonInsights.generated ? 'success' : 'warning'}>
-                                                    {pythonInsights.generated ? 'Python Active' : 'Fallback Snapshot'}
+                                                    {pythonInsights.generated ? 'Engine Active' : 'Fallback Snapshot'}
                                                 </Pill>
                                             </div>
                                             <div className="grid gap-4 sm:grid-cols-2">
@@ -1179,7 +1179,7 @@ function App() {
                                     <h2 className="text-3xl font-black tracking-tight text-slate-950">从 CGM 分析到飞书内执行的 Agent 闭环</h2>
                                     <p className="text-base leading-8 text-slate-600">
                                         这一页不是单纯讲技术栈，而是帮你把作品说成“能接进真实办公场景”的 Agent 方案：
-                                        数据进来之后如何被 Python 挖掘、如何进入 Copilot 多轮对话、最后如何落在飞书 IM、多维表格、Docs 和待办里。
+                                        数据进来之后如何被信号引擎挖掘、如何进入 Copilot 多轮对话、最后如何落在飞书 IM、多维表格、Docs 和待办里。
                                     </p>
                                     <div className="flex flex-wrap gap-3">
                                         <button

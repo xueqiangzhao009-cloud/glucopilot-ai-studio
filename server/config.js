@@ -49,8 +49,8 @@ export const config = {
         apiKey: process.env.VIDEO_API_KEY || '',
         timeoutMs: numberFromEnv(process.env.VIDEO_TIMEOUT_MS, 45000)
     },
-    python: {
-        bin: process.env.PYTHON_BIN || 'python',
-        timeoutMs: numberFromEnv(process.env.PYTHON_TIMEOUT_MS, 15000)
+    signalEngine: {
+        bin: process.env.SIGNAL_ENGINE_BIN || process.env.PYTHON_BIN || 'python',
+        timeoutMs: numberFromEnv(process.env.SIGNAL_ENGINE_TIMEOUT_MS || process.env.PYTHON_TIMEOUT_MS, 15000)
     }
 };

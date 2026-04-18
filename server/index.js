@@ -4,7 +4,7 @@ import { config } from './config.js';
 import { calculateMetrics, normalizeCGMData, parseCSV } from './services/cgmMetrics.js';
 import { analyzePathology, answerCopilotQuestion } from './services/aiClient.js';
 import { generateVideo } from './services/videoService.js';
-import { generatePythonInsights } from './services/pythonInsights.js';
+import { generateSignalEngineInsights } from './services/signalEngineService.js';
 import { generateAgentWorkflow } from './services/workflowService.js';
 import { HttpError, getErrorPayload, parseRequestUrl, readJsonBody, readRequestBody, sendJson, setCorsHeaders } from './utils/http.js';
 
@@ -22,6 +22,11 @@ const buildMetricsResponse = (data, unit) => {
         metrics
     };
 };
+
+const buildInsightsPayload = (signalInsights) => ({
+    signalInsights,
+    pythonInsights: signalInsights
+});
 
 const handleHealth = () => ({
     ok: true,
@@ -80,13 +85,13 @@ export const handleRequest = async (req, res) => {
             const body = await readJsonBody(req, config.bodyLimitBytes);
             let metrics = body.metrics;
             let recentData = body.recentData || [];
-            let pythonInsights = body.pythonInsights || null;
+            let signalInsights = body.signalInsights || body.pythonInsights || null;
 
             if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
                 const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
                 metrics = metricsResponse.metrics;
                 recentData = metricsResponse.data.slice(-96);
-                pythonInsights = await generatePythonInsights({
+                signalInsights = await generateSignalEngineInsights({
                     data: metricsResponse.data,
                     metrics
                 });
@@ -99,10 +104,10 @@ export const handleRequest = async (req, res) => {
                 recentData,
                 locale: body.locale || 'en',
                 requireAI: Boolean(body.requireAI),
-                pythonInsights
+                pythonInsights: signalInsights
             });
 
-            sendJson(res, 200, { analysis, pythonInsights });
+            sendJson(res, 200, { analysis, ...buildInsightsPayload(signalInsights) });
             return;
         }
 
@@ -110,12 +115,12 @@ export const handleRequest = async (req, res) => {
             const body = await readJsonBody(req, config.bodyLimitBytes);
             let metrics = body.metrics;
             let analysis = body.analysis || null;
-            let pythonInsights = body.pythonInsights || null;
+            let signalInsights = body.signalInsights || body.pythonInsights || null;
 
             if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
                 const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
                 metrics = metricsResponse.metrics;
-                pythonInsights = await generatePythonInsights({
+                signalInsights = await generateSignalEngineInsights({
                     data: metricsResponse.data,
                     metrics
                 });
@@ -127,13 +132,13 @@ export const handleRequest = async (req, res) => {
                 question: body.question,
                 metrics,
                 analysis,
-                pythonInsights,
+                pythonInsights: signalInsights,
                 locale: body.locale || 'en',
                 requireAI: Boolean(body.requireAI),
                 history: Array.isArray(body.history) ? body.history : []
             });
 
-            sendJson(res, 200, { answer, pythonInsights });
+            sendJson(res, 200, { answer, ...buildInsightsPayload(signalInsights) });
             return;
         }
 
@@ -141,12 +146,12 @@ export const handleRequest = async (req, res) => {
             const body = await readJsonBody(req, config.bodyLimitBytes);
             let metrics = body.metrics;
             let analysis = body.analysis || null;
-            let pythonInsights = body.pythonInsights || null;
+            let signalInsights = body.signalInsights || body.pythonInsights || null;
 
             if (!metrics && Array.isArray(getPayloadData(body)) && getPayloadData(body).length > 0) {
                 const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
                 metrics = metricsResponse.metrics;
-                pythonInsights = await generatePythonInsights({
+                signalInsights = await generateSignalEngineInsights({
                     data: metricsResponse.data,
                     metrics
                 });
@@ -155,7 +160,7 @@ export const handleRequest = async (req, res) => {
                     recentData: metricsResponse.data.slice(-96),
                     locale: body.locale || 'en',
                     requireAI: Boolean(body.requireAI),
-                    pythonInsights
+                    pythonInsights: signalInsights
                 });
             }
 
@@ -164,12 +169,12 @@ export const handleRequest = async (req, res) => {
             const workflow = await generateAgentWorkflow({
                 metrics,
                 analysis,
-                pythonInsights,
+                pythonInsights: signalInsights,
                 locale: body.locale || 'en',
                 requireAI: Boolean(body.requireAI)
             });
 
-            sendJson(res, 200, { workflow, pythonInsights, analysis });
+            sendJson(res, 200, { workflow, analysis, ...buildInsightsPayload(signalInsights) });
             return;
         }
 
@@ -186,7 +191,7 @@ export const handleRequest = async (req, res) => {
         if (req.method === 'POST' && url.pathname === '/api/pipeline/analyze') {
             const body = await readJsonBody(req, config.bodyLimitBytes);
             const metricsResponse = buildMetricsResponse(getPayloadData(body), body.unit || 'auto');
-            const pythonInsights = await generatePythonInsights({
+            const signalInsights = await generateSignalEngineInsights({
                 data: metricsResponse.data,
                 metrics: metricsResponse.metrics
             });
@@ -195,7 +200,7 @@ export const handleRequest = async (req, res) => {
                 recentData: metricsResponse.data.slice(-96),
                 locale: body.locale || 'en',
                 requireAI: Boolean(body.requireAI),
-                pythonInsights
+                pythonInsights: signalInsights
             });
             const video = await generateVideo({
                 prompt: analysis.video_generation_prompt,
@@ -204,7 +209,7 @@ export const handleRequest = async (req, res) => {
 
             sendJson(res, 200, {
                 ...metricsResponse,
-                pythonInsights,
+                ...buildInsightsPayload(signalInsights),
                 analysis,
                 video
             });

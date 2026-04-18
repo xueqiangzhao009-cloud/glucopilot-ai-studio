@@ -4,16 +4,16 @@ import { dirname, resolve } from 'node:path';
 import { config } from '../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const scriptPath = resolve(__dirname, '../../python/cgm_insights.py');
+const scriptPath = resolve(__dirname, '../../signal_engine/cgm_signal_engine.py');
 
 const buildFallbackInsights = ({ data = [], metrics = {} }, errorMessage = '') => ({
-    engine: 'python-signal-engine',
+    engine: 'cgm-signal-engine',
     generated: false,
     error: errorMessage || null,
     summary: {
         overallRisk: Number(metrics.cv) > 36 || Number(metrics.tar) > 25 ? 'high' : 'moderate',
-        dominantPattern: 'Python runtime unavailable',
-        narrative: 'The app fell back to a lightweight snapshot. Start the backend with Python available to unlock richer signals.',
+        dominantPattern: 'Signal engine runtime unavailable',
+        narrative: 'The app fell back to a lightweight snapshot. Start the backend with the signal engine runtime available to unlock richer signals.',
         coverageHours: data.length ? Math.round((data.length / 4) * 10) / 10 : 0,
         meanGlucose: metrics.mean || null,
         samples: data.length,
@@ -24,21 +24,21 @@ const buildFallbackInsights = ({ data = [], metrics = {} }, errorMessage = '') =
     dailyPatterns: [],
     anomalyCards: [
         {
-            id: 'python-runtime',
-            title: 'Python signal engine is offline',
+            id: 'signal-engine-runtime',
+            title: 'Signal engine is offline',
             severity: 'warning',
-            evidence: errorMessage || 'Python analysis did not run successfully.',
-            nextStep: 'Set PYTHON_BIN if needed and restart the backend.'
+            evidence: errorMessage || 'Signal engine analysis did not run successfully.',
+            nextStep: 'Set SIGNAL_ENGINE_BIN if needed and restart the backend.'
         }
     ],
     suggestedQuestions: [
         '这组数据最值得优先解释的风险是什么？',
-        '如果把 Python 分析链路打开，还能得到哪些结构化洞察？'
+        '如果把信号引擎链路打开，还能得到哪些结构化洞察？'
     ]
 });
 
-const runPythonScript = (payload) => new Promise((resolve, reject) => {
-    const child = spawn(config.python.bin, [scriptPath], {
+const runSignalEngine = (payload) => new Promise((resolve, reject) => {
+    const child = spawn(config.signalEngine.bin, [scriptPath], {
         stdio: ['pipe', 'pipe', 'pipe']
     });
 
@@ -50,8 +50,8 @@ const runPythonScript = (payload) => new Promise((resolve, reject) => {
         if (finished) return;
         finished = true;
         child.kill();
-        reject(new Error(`Python insights timed out after ${config.python.timeoutMs}ms`));
-    }, config.python.timeoutMs);
+        reject(new Error(`Signal engine timed out after ${config.signalEngine.timeoutMs}ms`));
+    }, config.signalEngine.timeoutMs);
 
     child.stdout.on('data', (chunk) => {
         stdout += chunk.toString('utf8');
@@ -74,14 +74,14 @@ const runPythonScript = (payload) => new Promise((resolve, reject) => {
         finished = true;
 
         if (code !== 0) {
-            reject(new Error(stderr.trim() || `Python process exited with code ${code}`));
+            reject(new Error(stderr.trim() || `Signal engine process exited with code ${code}`));
             return;
         }
 
         try {
             resolve(JSON.parse(stdout || '{}'));
         } catch (error) {
-            reject(new Error(`Invalid Python JSON output: ${error.message}`));
+            reject(new Error(`Invalid signal engine JSON output: ${error.message}`));
         }
     });
 
@@ -89,13 +89,13 @@ const runPythonScript = (payload) => new Promise((resolve, reject) => {
     child.stdin.end();
 });
 
-export const generatePythonInsights = async ({ data = [], metrics = {} }) => {
+export const generateSignalEngineInsights = async ({ data = [], metrics = {} }) => {
     if (!Array.isArray(data) || data.length === 0) {
-        return buildFallbackInsights({ data, metrics }, 'No CGM data available for Python analysis.');
+        return buildFallbackInsights({ data, metrics }, 'No CGM data available for signal engine analysis.');
     }
 
     try {
-        const insights = await runPythonScript({ data, metrics });
+        const insights = await runSignalEngine({ data, metrics });
         return {
             ...insights,
             generated: true
